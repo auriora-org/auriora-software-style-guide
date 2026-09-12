@@ -1,7 +1,7 @@
 # AURIORA Software Style Guide
 
 **Document ID:** ASSG
-**Version:** 0.1.0
+**Version:** 0.2.0
 **Status:** Normative
 **Complements:** AURIORA Engineering Standard (AES)
 **Language:** English
@@ -97,6 +97,23 @@ Talking to hardware is what distinguishes AURIORA software from generic software
 - **A simulated device SHOULD exist** for any protocol of real complexity, and for Released tooling whose protocol layer needs hardware-free testing it is the expected mechanism: a software implementation of the device side, speaking the same protocol over the same transport interface. Tests run against it (Section 16); developers work without bench hardware; fault cases impossible to produce on demand with real devices (corruption, timeouts, version mismatches) become ordinary test cases.
 - **The simulator follows the specification,** not the firmware's quirks — that is how specification drift gets caught from the second direction.
 - **Record/replay MAY be used** to capture real device sessions for regression tests where full simulation is disproportionate.
+
+---
+
+### 3.5 Modules, Identity and Desired State
+
+These rules apply to software that talks to more than one AURIORA Module — which, in practice, is any tool that outlives a single bench setup. The contract they build on is the Module Control Interface (MCI), defined by AES ([Interfaces and Versioning §5](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/05-interfaces-and-versioning.md#5-module-control-interface)): one transport-independent set of control semantics, carried over a direct local connection or through a Module Hub. The transport abstraction of §3.2 is what makes that practical on this side of the cable.
+
+- **Key everything on Module identity.** The registry of known Modules MUST be keyed on the Module's persistent identity as reported over MCI — never on a device node, serial port name, USB path, hub or port index. Those are addresses, and they change when a machine reboots, a cable is moved or two Modules are unplugged in the wrong order. Software that keys on an address rebinds an experiment to the wrong hardware the first time someone swaps two cables, and the result is plausible data rather than an error.
+- **Topology is an attribute, not a name.** Where the tool tracks physical location — which hub, which port, which bench position — it MUST hold that as a mutable attribute *of* the identified Module. Moving a Module MUST update its location without creating a new device; replacing a Module in the same port MUST be recognized as a different device. Report both to the user: "the Module you configured is now on port 5" is useful; silently continuing is not.
+- **Ask what a Module can do.** Feature decisions MUST come from the capabilities the Module reports, never from a table of product numbers, family identifiers or firmware versions maintained in the tool. A type table has to be edited for every new Module and every firmware revision, and it fails silently when a Module is present but lacks the function assumed of it.
+- **Compare, then transfer.** When deploying assets or sessions, query the Module's inventory and its content integrity values first and transfer only what is missing or different. Retransmitting identical payloads to every Module on a bench is the difference between a deployment step that is usable and one that people work around. Progress and cancellation (§3.3) matter here more than anywhere else.
+- **Express setups as desired state.** Describe an experiment as the state each Module should be in — configuration, assets, session — and let the tool diff that against what each Module reports and act on the difference. This is reproducible, re-runnable and reviewable; a script of ordered commands is none of those, and it cannot tell you whether the bench is already correct.
+- **Groups belong here, not on the wire.** Logical groups — all Modules, a treatment group, a measurement group — are a host-side concept. They need no broadcast addressing and no shared bus, which is precisely why the same grouping works for a locally connected Module and a hub-connected one.
+- **Verify arming; never trust a command.** Before an experiment that depends on several Modules acting together, the tool MUST confirm that every required Module actually reached the armed state, and MUST refuse to proceed — loudly, naming the Modules — when any has not. A control command MUST NOT be used as the simultaneous trigger for several Modules: the spread in arrival times is unbounded and unrecorded, so the data looks synchronized and is not. The deterministic instant is a SYNC event.
+- **Discovery starts nothing.** Finding a Module, or rediscovering one after a reconnection, establishes identity and capabilities and nothing else. Restoring configuration is a deliberate action and re-arming is always explicit, so that plugging hardware in can never resume or start a run.
+- **Record what ran.** An experiment record MUST contain the identity, firmware version and configuration of every Module that took part, plus the SYNC topology where one was used. Reconstructing this afterwards from logs and memory is how irreproducible results happen.
+- **The simulator speaks MCI.** A simulated Module (§3.4) implements the same control semantics over the same transport interface, which is what makes hardware-free testing of identity handling, capability negotiation, arming failures and interrupted transfers ordinary test cases rather than bench accidents.
 
 ---
 
