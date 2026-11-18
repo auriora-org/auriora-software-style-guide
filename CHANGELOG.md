@@ -2,6 +2,10 @@
 
 All notable changes to the AURIORA Software Style Guide are documented in this file. Released versions are tagged in version control.
 
+## 0.6.0 - 2026-11-18
+
+- Units as the Module reports them on the Unit Link (§3.5, *Units come from the Module* rewritten), following AES 0.14.0 `AES-MCI-003`, `AES-UNIT-006` and `AES-IF-009` ([EDR-017](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/edr/EDR-017-unit-link-profile-and-family-consolidation.md)): per Unit the host reads identity, declared capabilities and Unit API version, the Unit Port it occupies, and whether it was activated or refused and why; the Unit Port index is topology kept apart from the Unit's identity, as a Module's path already is, so a Unit moved to another port is the same Unit at a new index and no tool fixes which Unit belongs on which port; the number of Unit Ports is read from the Module, never from a table of products ([Naming and Identity §5](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/04-naming-and-identity.md#5-product-numbers-and-revisions)). **Incompatible change**, pre-Release and therefore a minor version: the execution model is no longer read — every Unit is a Managed Unit — and a tool MUST NOT require a reported Unit to state one, which a tool written to 0.5.0 could. With this release the guide is aligned with AES 0.14.1; AES 0.11.0 to 0.13.0 and 0.14.1 add no host-side rule.
+
 ## 0.5.0 - 2026-09-23
 
 - Topology discovery as a walk of the Hub tree from each Hub's own declarations, path as a topology attribute re-resolved from identity, and Units read from the Module (§3.5, extended), following AES 0.10.0 `AES-HUB-004`, `AES-HUB-005` and `AES-MCI-003` ([EDR-012](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/edr/EDR-012-hub-capability-discovery-and-unit-enumeration.md), [EDR-013](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/edr/EDR-013-mcl-cascading-and-path-addressing.md)).
